@@ -71,6 +71,10 @@ select{appearance:none;-webkit-appearance:none;padding-right:34px;text-overflow:
 .adj:empty{display:none}
 .sub{font-size:13px;color:var(--mute);margin:-6px 0 12px}
 
+/* anteprima alimento in tempo reale */
+.prev-box{grid-column:1/-1;background:var(--field);border:1px solid var(--fline);border-radius:12px;padding:10px 12px;font-size:12px;color:var(--mute);margin-top:2px}
+.prev-box b{color:var(--ink);font-weight:600}
+
 /* aggiungi un alimento */
 .form{display:grid;grid-template-columns:1fr auto;gap:10px}
 .search{grid-column:1/-1;position:relative}
@@ -90,7 +94,7 @@ details{margin:0;border:0;padding:0}
 summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;font-size:14px;font-weight:600}
 summary::-webkit-details-marker{display:none}
 .mac{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.mac #mn,.mac .hint,.mac button{grid-column:1/-1}
+.mac #mn,.mac .hint,.mac button,.mac .prev-box{grid-column:1/-1}
 .mac input{padding:0 10px}
 .mac button{height:46px;margin-top:2px}
 .hint{margin:0;font-size:11px;color:var(--soft)}
@@ -109,9 +113,21 @@ details .note{margin:0 0 12px;text-align:left;font-size:12px;color:var(--mute)}
 .warn{color:var(--red)}
 .tag{margin-left:8px;font-size:11px;font-weight:500;color:var(--link)}
 
-/* elenchi */
+.addrow{grid-column:1/-1;display:flex;gap:10px;margin-top:2px}
+.addrow button{flex:1;height:46px;margin-top:0}
+.addrow select{width:auto;flex:none;height:46px;font-size:14px;padding:0 28px 0 12px}
+.addrow select[aria-invalid="true"]{border-color:var(--red)}
+
+/* elenchi e pasti categorizzati */
 ul{list-style:none;margin:0;padding:0}
-li{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.meal-group{margin-bottom:18px}
+.meal-group:last-child{margin-bottom:0}
+.meal-hdr{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:2px solid var(--line);margin-bottom:6px}
+.meal-hdr h3{margin:0;font-size:14px;font-weight:700;color:var(--ink);text-transform:capitalize}
+.meal-stats{font-size:11px;font-weight:600;color:var(--mute);background:var(--field);padding:3px 8px;border-radius:6px;border:1px solid var(--fline)}
+.time-tag{font-size:11px;color:var(--soft);margin-left:4px;font-weight:400}
+
+li{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
 li:first-child{padding-top:0}
 li:last-child{border-bottom:0;padding-bottom:0}
 li b{font-weight:600;font-size:14px}
@@ -125,8 +141,9 @@ li.ed{display:block}
 li.ed .tg{margin:8px 0 12px}
 li.empty{display:block;border:1.5px dashed var(--dash);border-radius:14px;padding:20px 12px;text-align:center;color:var(--soft);font-size:13px;line-height:1.5}
 .tip{padding:14px 16px}
-.tiph{margin:0 0 8px;font-size:13px;color:var(--mute)}
+.tiph{margin:0 0 8px;font-size:13px;color:var(--mute);display:flex;justify-content:space-between;align-items:center}
 .tiph b{color:var(--ink);font-weight:700}
+.btn-rr{background:none;border:0;padding:0;height:auto;color:var(--link);font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:3px}
 ul.chips{display:flex;flex-wrap:wrap;gap:6px}
 ul.chips li,ul.chips li:first-child,ul.chips li:last-child{display:block;padding:6px 10px;border:1px solid var(--fline);background:var(--field);border-radius:99px;font-size:12px;line-height:1.3}
 ul.chips li b{font-size:12px}
@@ -144,7 +161,7 @@ ul.chips li b{font-size:12px}
     <b id="day"></b>
     <button id="next" aria-label="Giorno successivo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
   </div>
-  <div class="kc" id="kcal"><span class="cap">Calorie</span><strong></strong><div class="bar"><i></i></div></div>
+  <div class="kc" id="kcal"><span class="cap">Rimanenti</span><strong></strong><div class="bar"><i></i></div></div>
   <div id="rows"></div>
   <div class="adj" id="adj"></div>
 </section>
@@ -158,6 +175,9 @@ ul.chips li b{font-size:12px}
     </div>
     <input id="g" type="number" inputmode="decimal" min="0" step="any" placeholder="Grammi" aria-label="Quantità">
     <select id="m" aria-label="Unità di misura"><option value="g">g</option></select>
+    
+    <div id="prev-fpan" class="prev-box" hidden></div>
+
     <div id="cu">
       <p>Alimento nuovo: inserisci i valori nutrizionali.</p>
       <select id="cm" class="w4" aria-label="I valori sono riferiti a">
@@ -171,7 +191,7 @@ ul.chips li b{font-size:12px}
       <input id="cw" class="w2" type="number" inputmode="decimal" step="any" placeholder="Peso 1 unità (g)" aria-label="Peso di una unità in grammi, facoltativo per i valori per unità">
       <input id="cl" class="w2" type="text" placeholder="Nome unità (es. vasetto)" aria-label="Nome dell'unità">
     </div>
-    <button class="solid" id="add">Aggiungi</button>
+    <div class="addrow"><select id="pasto" aria-label="Pasto"><option value="">Pasto…</option><option>Colazione</option><option>Pranzo</option><option>Merenda</option><option>Cena</option></select><button class="solid" id="add">Aggiungi</button></div>
   </div>
   <div class="mac" id="mpan" hidden>
     <input id="mn" type="text" placeholder="Nome (facoltativo)" autocomplete="off" aria-label="Nome (facoltativo)">
@@ -179,8 +199,11 @@ ul.chips li b{font-size:12px}
     <input id="mc" type="number" inputmode="decimal" min="0" step="any" placeholder="Carbo" aria-label="Carboidrati in grammi">
     <input id="mp" type="number" inputmode="decimal" min="0" step="any" placeholder="Prot." aria-label="Proteine in grammi">
     <input id="mk" type="number" inputmode="decimal" min="0" step="any" placeholder="kcal" aria-label="Calorie, facoltative">
+    
+    <div id="prev-mpan" class="prev-box" hidden></div>
+    
     <p class="hint">Grammi di grassi, carboidrati e proteine. Se lasci vuote le kcal le calcolo io (9 per i grassi, 4 per il resto).</p>
-    <button class="solid" id="madd">Aggiungi</button>
+    <div class="addrow"><select id="pasto2" aria-label="Pasto"><option value="">Pasto…</option><option>Colazione</option><option>Pranzo</option><option>Merenda</option><option>Cena</option></select><button class="solid" id="madd">Aggiungi</button></div>
   </div>
   <datalist id="foods"></datalist>
 </section>
@@ -192,11 +215,14 @@ ul.chips li b{font-size:12px}
     <input id="mnm" type="text" placeholder="Nome del pasto (es. colazione)" aria-label="Nome del pasto" autocomplete="off">
     <div class="btns" style="margin:10px 0 16px"><button class="solid" id="msv">Salva pasto</button><button id="mcn">Annulla</button></div>
   </div>
-  <ul id="log"></ul>
+  <div id="log-container"></div>
 </section>
 
 <section class="card tip" id="pcard" hidden aria-live="polite">
-  <p class="tiph" id="ph"></p>
+  <div class="tiph">
+    <span id="ph"></span>
+    <button class="btn-rr" id="rr-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> Reroll</button>
+  </div>
   <ul class="chips" id="psug"></ul>
 </section>
 
@@ -268,7 +294,6 @@ ul.chips li b{font-size:12px}
 <script>
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-// nome, base (g = per 100 g, u = per unità), kcal, grassi, carboidrati, proteine
 const L=[
 ["ace zero","g",12,2.9,0,0],
 ["albicocca","g",67,0,15,0.7],
@@ -340,13 +365,6 @@ const L=[
 ["wasa protein","u",57,1.4,7.5,2.8],
 ["colazione frittata","u",246,10.6,15.8,20.5]
 ];
-// formato interno: [nome, kcal, proteine, carboidrati, grassi, nome unità, peso unità (g), flag "valori per unità"]
-// con il flag (indice 7) i valori sono riferiti a 1 unità; senza, a 100 g
-// Alimenti generici, di solito senza etichetta (frutta, verdura, frutta secca, uova).
-// Valori per 100 g di parte edibile, crudi, con i carboidrati "disponibili" come sulle etichette italiane.
-// Base: tabelle italiane CREA/INRAN, controllate con USDA e con etichette di prodotti in vendita in Italia;
-// dove le fonti divergono molto (banana, arancia, anguria, avocado, fichi d'india) ho preso un valore realistico intermedio.
-// Formato: nome, "g", kcal, grassi, carboidrati, proteine [, nome unità, peso di 1 unità in g (parte edibile)]
 const G=[
 ["mela","g",50,0.2,11.4,0.3,"mela",150],
 ["pera","g",48,0.1,10.5,0.4,"pera",160],
@@ -408,24 +426,40 @@ try{S=JSON.parse(localStorage.getItem("macro1"))||{}}catch(e){}
 S.t=S.t||{k:2270,p:150,c:260,f:70};S.l=S.l||{};S.u=S.u||[];S.a=S.a||{};S.m=S.m||[];S.ov=S.ov||{};
 const save=()=>{try{localStorage.setItem("macro1",JSON.stringify(S))}catch(e){}};
 const iso=d=>new Date(d.getTime()-d.getTimezoneOffset()*6e4).toISOString().slice(0,10);
-let cur=new Date(),editIdx=null,selMode=false,editF=null,editB=null,sug=[];
-// gli alimenti della lista base possono essere sostituiti da una versione modificata (S.ov, per nome in minuscolo)
+let cur=new Date(),editIdx=null,selMode=false,editF=null,editB=null,sug=[],sugOffset=0;
 const all=()=>[...P.map(x=>S.ov[x[0].toLowerCase()]||x),...S.u];
 const find=n=>all().find(x=>x[0].toLowerCase()===n.toLowerCase());
 const r=v=>Math.round(v*10)/10;
 const rd=v=>Math.round(v*100)/100;
 const sg=v=>(v>0?"+":v<0?"−":"")+r(Math.abs(v));
-const RATE=2.25; // 1 g di grassi (9 kcal) = 2,25 g di carboidrati (4 kcal)
-const shift=key=>(S.a[key]&&S.a[key].sh)||0; // grammi di grassi spostati sui carboidrati (negativo: il contrario)
+const RATE=2.25;
+const shift=key=>(S.a[key]&&S.a[key].sh)||0;
 const PEN='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
-// una voce del diario è "manuale" se non ha né grammi né unità
 const isMan=x=>x.g==null&&!x.q;
 const qty=x=>x.q?(x.qn||parseFloat(x.q)||1):x.g;
 const unitLabel=x=>(x.q&&x.q.split(" × ").slice(1).join(" × "))||"unità";
 const amt=x=>x.q?x.q+(x.g!=null?` (${r(x.g)} g)`:""):(x.g!=null?r(x.g)+" g":"");
 const copy=o=>JSON.parse(JSON.stringify(o));
 function foods(){$("#foods").innerHTML=all().map(x=>`<option value="${esc(x[0])}">`).join("")}
-// aggiorna il menu g / unità in base all'alimento scritto
+
+// pasto: scelto da chi inserisce (di default dedotto dall'ora, solo per oggi)
+const MEALS=["Colazione","Pranzo","Merenda","Cena"],ALLM=[...MEALS,"Altro"];
+function autoMeal(d=new Date()){const h=d.getHours();return h>=5&&h<12?"Colazione":h>=12&&h<15?"Pranzo":h>=15&&h<18?"Merenda":"Cena"}
+const okT=t=>typeof t==="string"&&/^\d{1,2}:\d{2}$/.test(t);
+// pasto di una voce: quello scelto; per le voci vecchie, dedotto dall'orario; altrimenti "Altro"
+function mealOf(x){
+  if(ALLM.includes(x.pasto))return x.pasto;
+  if(okT(x.t))return autoMeal(new Date(2000,0,1,+x.t.split(":")[0]));
+  return "Altro";
+}
+let mealSel=null,autoQ=false;
+const isToday=()=>iso(cur)===iso(new Date());
+const effMeal=()=>mealSel||(isToday()?autoMeal():null);
+function syncMeal(){const e=effMeal()||"";["#pasto","#pasto2"].forEach(s=>{const el=$(s);el.value=e;el.removeAttribute("aria-invalid")})}
+function needMeal(id){const m=effMeal();if(!m){const el=$(id);el.setAttribute("aria-invalid","true");el.focus()}return m}
+["#pasto","#pasto2"].forEach(s=>$(s).addEventListener("change",ev=>{mealSel=ev.target.value||null;syncMeal()}));
+const mealSelHTML=x=>`<div class="full"><label for="epa">Pasto</label><select id="epa">${ALLM.map(m=>`<option${m===mealOf(x)?" selected":""}>${m}</option>`).join("")}</select></div>`;
+
 function units(){
   const v=$("#n").value.trim(),f=v&&find(v),m=$("#m"),o=[];
   if(f){
@@ -433,11 +467,61 @@ function units(){
     else{o.push('<option value="g">g</option>');if(f[6])o.push(`<option value="u">${esc(f[5]||"unità")} (${r(f[6])} g)</option>`)}
   }else{o.push('<option value="g">g</option>');if(v)o.push('<option value="u">unità</option>')}
   m.innerHTML=o.join("");
-  m.value=f&&(f[7]||f[6])?"u":"g";
+  const isU=f&&(f[7]||f[6]);
+  m.value=isU?"u":"g";
+  if(isU&&!$("#g").value){$("#g").value=1;autoQ=true}
+  else if(!isU&&autoQ){$("#g").value="";autoQ=false}
   setPh();
+  updateLivePreview();
 }
+
 function setPh(){$("#g").placeholder=$("#m").value==="u"?"Quantità":"Grammi"}
-// costruisce una voce del diario per q grammi (o q unità)
+
+function getRem(){
+  const key=iso(cur),e=S.l[key]||[],sh=shift(key);
+  const E={k:S.t.k,p:S.t.p,c:S.t.c+sh*RATE,f:S.t.f-sh};
+  const T=e.reduce((a,x)=>({k:a.k+x.k,p:a.p+x.p,c:a.c+x.c,f:a.f+x.f}),{k:0,p:0,c:0,f:0});
+  return {k:E.k-T.k,p:E.p-T.p,c:E.c-T.c,f:E.f-T.f,E};
+}
+
+function updateLivePreview(){
+  const isMac=!$("#mpan").hidden;
+  const rem=getRem();
+  let k=0,p=0,c=0,f=0,valid=false;
+
+  if(!isMac){
+    const n=$("#n").value.trim(),q=+$("#g").value,useU=$("#m").value==="u";
+    let food=find(n);
+    if(!food){
+      const v=["#ck","#cp","#cc","#cf"].map(s=>$(s).value);
+      if(n&&q>0&&!v.some(x=>x==="")){
+        const w=+$("#cw").value,perU=$("#cm").value==="u",lab=$("#cl").value.trim()||"unità";
+        food=build(n,v,w,perU,lab);
+      }
+    }
+    if(food&&q>0){
+      const item=mk(food,q,useU);
+      if([item.k,item.p,item.c,item.f].every(Number.isFinite)){k=item.k;p=item.p;c=item.c;f=item.f;valid=true}
+    }
+  }else{
+    f=Math.max(0,+$("#mf").value||0);c=Math.max(0,+$("#mc").value||0);p=Math.max(0,+$("#mp").value||0);
+    const kv=$("#mk").value;
+    k=kv===""?f*9+c*4+p*4:Math.max(0,+kv||0);
+    if(f||c||p||kv!=="")valid=true;
+  }
+
+  const pEl=isMac?$("#prev-mpan"):$("#prev-fpan");
+  if(!valid){pEl.hidden=true;return}
+
+  const pct=(v,rm)=>rm>0?`${r(v/rm*100)}%`:(v>0?"oltre":"—");
+  pEl.innerHTML=`<b>Impatto sul rimasto:</b> ${Math.round(k)} kcal (${pct(k,rem.k)}) · P ${r(p)}g (${pct(p,rem.p)}) · C ${r(c)}g (${pct(c,rem.c)}) · G ${r(f)}g (${pct(f,rem.f)})`;
+  pEl.hidden=false;
+}
+
+["#n","#g","#ck","#cp","#cc","#cf","#cw","#mf","#mc","#mp","#mk"].forEach(s=>{
+  const el=$(s);if(el)el.addEventListener("input",updateLivePreview);
+});
+
 function mk(f,q,useU){
   let g=null,m;
   if(f[7]){m=q;useU=true}
@@ -447,45 +531,99 @@ function mk(f,q,useU){
   if(useU){it.qn=q;it.q=`${r(q)} × ${f[5]||"unità"}`}
   return it;
 }
-const push=it=>{const key=iso(cur);(S.l[key]=S.l[key]||[]).push(it)};
+
+function getTimeStr(){
+  const d=new Date();
+  return d.getHours().toString().padStart(2,'0')+":"+d.getMinutes().toString().padStart(2,'0');
+}
+
+const push=(it,pm)=>{
+  const key=iso(cur);
+  if(!okT(it.t))it.t=getTimeStr();
+  if(pm)it.pasto=pm;else if(!ALLM.includes(it.pasto))it.pasto="Altro";
+  (S.l[key]=S.l[key]||[]).push(it);
+};
+
 const kc=it=>`${Math.round(it.k)} kcal · P ${r(it.p)} · C ${r(it.c)} · G ${r(it.f)}`;
-// categorie di fonti proteiche, per proporre consigli vari
+
 const CAT=[["pesce",/tonno|salmone|gamber|vongol|pesce|baccal|merluzz/i],["carne",/pollo|tacchino|roast|tritato|carne|prosciutto|bresaola|manzo|maiale|vitello/i],["uova",/uov|albume|frittata/i],["latticini",/mozzarella|parmigiano|latte|yogurt|altoproteico|ricotta|formaggio|skyr/i],["vegetali",/lenticch|ceci|fagiol|pisell|tofu|seitan|soia/i]];
 const cat=n=>(CAT.find(c=>c[1].test(n))||["altro"])[0];
-// per ogni categoria, la fonte più leggera in calorie per coprire t grammi di proteine
+
 function suggest(t){
-  const best={};
+  const items=[];
   all().forEach(f=>{
     const p=f[2];let q,m,lab;
     if(f[7]){if(p<5)return;q=Math.ceil(t/p*2)/2;if(q>6)return;m=q;lab=`${r(q)} × ${f[5]||"unità"}`}
     else{if(p<8)return;q=Math.ceil(t/p*20)*5;if(q>400)return;m=q/100;lab=`${q} g`}
     const s=f[1]/p;if(s>10)return;
-    const c=cat(f[0]);
-    if(!best[c]||s<best[c].s)best[c]={f,lab,k:f[1]*m,s};
+    items.push({f,lab,k:f[1]*m,s});
   });
-  return Object.values(best).sort((a,b)=>a.s-b.s).slice(0,5);
+  items.sort((a,b)=>a.k-b.k);
+  if(!items.length)return [];
+  const start=sugOffset%items.length;
+  let res=items.slice(start,start+4);
+  if(res.length<4)res=res.concat(items.slice(0,4-res.length));
+  return res;
 }
+
 function editHTML(x){
   const btn='<div class="btns"><button class="solid" data-act="save">Salva</button><button data-act="cancel">Annulla</button></div>';
-  if(isMan(x))return `<li class="ed"><div class="tg"><div class="full"><label for="en">Nome</label><input id="en" type="text" value="${esc(x.n)}"></div><div><label for="ef">Grassi (g)</label><input id="ef" type="number" inputmode="decimal" min="0" step="any" value="${rd(x.f)}"></div><div><label for="ec">Carboidrati (g)</label><input id="ec" type="number" inputmode="decimal" min="0" step="any" value="${rd(x.c)}"></div><div><label for="ep">Proteine (g)</label><input id="ep" type="number" inputmode="decimal" min="0" step="any" value="${rd(x.p)}"></div><div><label for="ek">Calorie</label><input id="ek" type="number" inputmode="decimal" min="0" step="any" value="${rd(x.k)}"></div></div>${btn}</li>`;
-  return `<li class="ed"><b>${esc(x.n)}</b><div class="tg"><div class="full"><label for="eq">Quantità (${x.q?esc(unitLabel(x)):"g"})</label><input id="eq" type="number" inputmode="decimal" min="0" step="any" value="${rd(qty(x))}"></div></div>${btn}</li>`;
+  if(isMan(x))return `<li class="ed"><div class="tg"><div class="full"><label for="en">Nome</label><input id="en" type="text" value="${esc(x.n)}"></div><div><label for="ef">Grassi (g)</label><input id="ef" type="number" inputmode="decimal" min="0" step="any" value="${rd(x.f)}"></div><div><label for="ec">Carboidrati (g)</label><input id="ec" type="number" inputmode="decimal" min="0" step="any" value="${rd(x.c)}"></div><div><label for="ep">Proteine (g)</label><input id="ep" type="number" inputmode="decimal" min="0" step="any" value="${rd(x.p)}"></div><div><label for="ek">Calorie</label><input id="ek" type="number" inputmode="decimal" min="0" step="any" value="${rd(x.k)}"></div>${mealSelHTML(x)}</div>${btn}</li>`;
+  return `<li class="ed"><b>${esc(x.n)}</b><div class="tg"><div class="full"><label for="eq">Quantità (${x.q?esc(unitLabel(x)):"g"})</label><input id="eq" type="number" inputmode="decimal" min="0" step="any" value="${rd(qty(x))}"></div>${mealSelHTML(x)}</div>${btn}</li>`;
 }
-function logHTML(e){
-  if(!e.length)return `<li class="empty">Nessun alimento.<br>Aggiungine uno qui sopra.</li>`;
-  return e.map((x,i)=>{
-    if(editIdx===i)return editHTML(x);
-    const a=amt(x),ck=selMode?`<input type="checkbox" class="ck" data-i="${i}" checked aria-label="Includi ${esc(x.n)}">`:"";
-    const acts=selMode?"":`<span class="acts"><button data-act="edit" data-i="${i}" aria-label="Modifica ${esc(x.n)}">${PEN}</button><button data-act="del" data-i="${i}" aria-label="Elimina ${esc(x.n)}">✕</button></span>`;
-    return `<li>${ck}<div class="tx"><b>${esc(x.n)}</b>${a?" · "+esc(a):""}<small>${kc(x)}</small></div>${acts}</li>`}).join("");
+
+function renderLog(e){
+  const container=$("#log-container");
+  if(!e.length){container.innerHTML=`<ul><li class="empty">Nessun alimento.<br>Aggiungine uno qui sopra.</li></ul>`;return}
+  
+  const cats=["Colazione","Pranzo","Merenda","Cena","Altro"];
+  const groups={};
+  cats.forEach(c=>groups[c]=[]);
+  
+  e.forEach((x,i)=>{
+    const c=mealOf(x);
+    groups[c].push({x,i});
+  });
+
+  let html="";
+  cats.forEach(c=>{
+    const items=groups[c];
+    if(!items.length)return;
+    const tot=items.reduce((a,item)=>({k:a.k+item.x.k,p:a.p+item.x.p,c:a.c+item.x.c,f:a.f+item.x.f}),{k:0,p:0,c:0,f:0});
+    const pk=S.t.k?r((tot.k/S.t.k)*100):0;
+    
+    html+=`<div class="meal-group">
+      <div class="meal-hdr">
+        <h3>${c}</h3>
+        <span class="meal-stats">${Math.round(tot.k)} kcal (${pk}%) · P ${r(tot.p)}g · C ${r(tot.c)}g · G ${r(tot.f)}g</span>
+      </div>
+      <ul>`;
+      
+    items.forEach(({x,i})=>{
+      if(editIdx===i){html+=editHTML(x);return}
+      const a=amt(x),ck=selMode?`<input type="checkbox" class="ck" data-i="${i}" checked aria-label="Includi ${esc(x.n)}">`:"";
+      const acts=selMode?"":`<span class="acts"><button data-act="edit" data-i="${i}" aria-label="Modifica ${esc(x.n)}">${PEN}</button><button data-act="del" data-i="${i}" aria-label="Elimina ${esc(x.n)}">✕</button></span>`;
+      const timeHtml=x.t?`<span class="time-tag">${x.t}</span>`:"";
+      html+=`<li>${ck}<div class="tx"><b>${esc(x.n)}</b>${timeHtml}${a?" · "+esc(a):""}<small>${kc(x)}</small></div>${acts}</li>`;
+    });
+    
+    html+=`</ul></div>`;
+  });
+
+  container.innerHTML=html;
 }
+
 function formHTML(f,fixed,sAct,cAct){
   const base=f[7]?"u":"g",num=(id,lb,v)=>`<div><label for="${id}">${lb}</label><input id="${id}" type="number" inputmode="decimal" step="any" value="${v}"></div>`;
   return `<li class="ed"><div class="tg"><div class="full"><label for="fn">Nome</label><input id="fn" type="text" value="${esc(f[0])}"${fixed?" disabled":""}></div><div class="full"><label for="fb">Valori riferiti a</label><select id="fb"><option value="g"${base==="g"?" selected":""}>100 g</option><option value="u"${base==="u"?" selected":""}>1 unità</option></select></div>${num("fk","Calorie",rd(f[1]))}${num("fp","Proteine (g)",rd(f[2]))}${num("fc","Carboidrati (g)",rd(f[3]))}${num("ff","Grassi (g)",rd(f[4]))}${num("fw","Peso 1 unità (g)",f[6]?rd(f[6]):"")}<div><label for="fl">Nome unità</label><input id="fl" type="text" value="${esc(f[5]||"")}"></div></div><p class="note warn" id="ferr" style="margin:-4px 0 10px"></p><div class="btns"><button class="solid" data-act="${sAct}">Salva</button><button data-act="${cAct}">Annulla</button></div></li>`;
 }
+
 const finfo=f=>{const lab=esc(f[5]||"unità");return `${Math.round(f[1])} kcal · P ${r(f[2])} · C ${r(f[3])} · G ${r(f[4])} · ${f[7]?`per ${lab}`:`per 100 g${f[6]?` · 1 ${lab} = ${r(f[6])} g`:""}`}`};
+
 function frow(f,ea,da,id,dl,mod){
   return `<li><div class="tx"><b>${esc(f[0])}</b>${mod?'<span class="tag">modificato</span>':""}<small>${finfo(f)}</small></div><span class="acts"><button data-act="${ea}" data-i="${esc(id)}" aria-label="Modifica ${esc(f[0])}">${PEN}</button><button data-act="${da}" data-i="${esc(id)}" aria-label="${mod?"Ripristina":"Elimina"} ${esc(f[0])}">${dl}</button></span></li>`;
 }
+
 function custHTML(){
   const out=[],tmp=editB&&!S.ov[editB]?P.find(x=>x[0].toLowerCase()===editB):null;
   if(tmp)out.push(formHTML(tmp,true,"bsave","bcancel"));
@@ -493,49 +631,67 @@ function custHTML(){
   Object.keys(S.ov).sort().forEach(k=>{const f=S.ov[k];out.push(editB===k?formHTML(f,true,"bsave","bcancel"):frow(f,"bedit","breset",k,"↺",true))});
   return out.length?out.join(""):`<li class="empty">Nessun alimento personalizzato o modificato.</li>`;
 }
+
 function render(){
   const key=iso(cur),e=S.l[key]||[],sh=shift(key);
   const E={k:S.t.k,p:S.t.p,c:S.t.c+sh*RATE,f:S.t.f-sh};
   $("#day").textContent=key===iso(new Date())?"Oggi":cur.toLocaleDateString("it-IT",{weekday:"long",day:"numeric",month:"long"});
   const T=e.reduce((a,x)=>({k:a.k+x.k,p:a.p+x.p,c:a.c+x.c,f:a.f+x.f}),{k:0,p:0,c:0,f:0});
+  
+  const remK=E.k-T.k;
   const K=$("#kcal");
-  K.querySelector("strong").innerHTML=`${Math.round(T.k)} <small>/ ${S.t.k}</small>`;
-  K.classList.toggle("over",T.k>S.t.k);
-  K.querySelector(".bar i").style.width=(S.t.k>0?Math.min(100,T.k/S.t.k*100):0)+"%";
+  K.querySelector("strong").innerHTML=`${Math.round(remK)} <small>/ ${S.t.k} kcal</small>`;
+  K.classList.toggle("over",remK<0);
+  K.querySelector(".bar i").style.width=(E.k>0?Math.min(100,Math.max(0,remK)/E.k*100):0)+"%";
+
   $("#rows").innerHTML=[["Grassi","f"],["Carboidrati","c"],["Proteine","p"]].map(([l,k])=>{
-    const over=k!=="p"&&T[k]>E[k]+.05,w=E[k]>0?Math.min(100,T[k]/E[k]*100):(T[k]>0?100:0);
-    return `<div class="row ${k}${over?" over":""}"><div class="top"><b>${l}</b><span><em>${r(T[k])} g</em> / ${r(E[k])} g</span></div><div class="bar"><i style="width:${w}%"></i></div></div>`}).join("");
+    const remM=E[k]-T[k];
+    const over=k!=="p"&&remM<0,w=E[k]>0?Math.min(100,Math.max(0,remM)/E[k]*100):0;
+    const val=k==="p"&&remM<=0?"<em>raggiunto</em>":`<em>${r(remM)} g</em>`;
+    return `<div class="row ${k}${over?" over":""}"><div class="top"><b>${l}</b><span>${val} / ${r(E[k])} g</span></div><div class="bar"><i style="width:${w}%"></i></div></div>`}).join("");
+  
   $("#adj").textContent=Math.abs(sh)>.04?`Obiettivi di oggi spostati: grassi ${sg(-sh)} g, carboidrati ${sg(sh*RATE)} g`:"";
-  // proteine rimaste: consigli compatti
+  
   const remP=E.p-T.p,tgt=Math.min(remP,40);
   sug=remP>=3?suggest(tgt):[];
   $("#pcard").hidden=!sug.length;
-  $("#ph").innerHTML=`Mancano <b>${r(remP)} g</b> di proteine. Per coprirne ${r(tgt)} g:`;
+  $("#ph").innerHTML=`Mancano <b>${r(remP)} g</b> proteine. Per coprirne ${r(tgt)} g:`;
   $("#psug").innerHTML=sug.map(s=>`<li><b>${esc(s.f[0])}</b> ${esc(s.lab)} · ${Math.round(s.k)} kcal</li>`).join("");
-  // diario
-  $("#log").innerHTML=logHTML(e);
+  
+  renderLog(e);
   $("#sv").hidden=!e.length||selMode;
   $("#sel").hidden=!selMode;
-  // pasti salvati
+  
   $("#meals").innerHTML=S.m.length?S.m.map((m,i)=>{
     const t=m.items.reduce((a,x)=>({k:a.k+x.k,p:a.p+x.p,c:a.c+x.c,f:a.f+x.f}),{k:0,p:0,c:0,f:0});
     return `<li><div class="tx"><b>${esc(m.name)}</b><small>${m.items.length} ${m.items.length===1?"alimento":"alimenti"} · ${kc(t)}</small></div><span class="acts"><button class="mini solid" data-act="addmeal" data-i="${i}">Aggiungi</button><button data-act="delmeal" data-i="${i}" aria-label="Elimina ${esc(m.name)}">✕</button></span></li>`}).join(""):`<li class="empty">Nessun pasto salvato.<br>Usa «Salva come pasto» nella sezione Mangiato.</li>`;
-  // alimenti personalizzati
+  
   $("#cust").innerHTML=custHTML();
   $("#rem").textContent=`Oggi: grassi ${r(Math.abs(E.f-T.f))} g ${E.f-T.f>=0?"rimasti":"oltre l'obiettivo"}, carboidrati ${r(Math.abs(E.c-T.c))} g ${E.c-T.c>=0?"rimasti":"oltre l'obiettivo"}.`;
   ["k","p","c","f"].forEach(k=>$("#t"+k).value=S.t[k]);
   cvPrev();
+  syncMeal();
+  updateLivePreview();
 }
+
+$("#rr-btn").onclick=()=>{sugOffset+=4;render()};
+
 function cvPrev(){
   const fc=$("#cd").value==="fc",a=+$("#ca").value;
   $("#cal").textContent=fc?"Grassi da spostare (g)":"Carboidrati da spostare (g)";
   $("#cpv").textContent=a>0?(fc?`−${r(a)} g grassi, +${r(a*RATE)} g carboidrati`:`−${r(a)} g carboidrati, +${r(a/RATE)} g grassi`):"";
 }
-// aggiunta di un alimento
+
 $("#n").addEventListener("input",()=>{const v=$("#n").value.trim();$("#cu").style.display=v&&!find(v)?"grid":"none";units()});
-$("#m").addEventListener("change",setPh);
-$("#cm").addEventListener("change",()=>{if($("#cm").value==="u"){$("#m").value="u";setPh()}});
-// costruisce l'alimento dai valori inseriti: [nome, kcal, prot, carbo, grassi, ...unità]
+$("#g").addEventListener("input",()=>{autoQ=false});
+$("#m").addEventListener("change",()=>{
+  const u=$("#m").value==="u";
+  if(u&&!$("#g").value){$("#g").value=1;autoQ=true}
+  else if(!u&&autoQ){$("#g").value="";autoQ=false}
+  setPh();updateLivePreview();
+});
+$("#cm").addEventListener("change",()=>{if($("#cm").value==="u"){$("#m").value="u";if(!$("#g").value){$("#g").value=1;autoQ=true}setPh();updateLivePreview()}});
+
 function build(n,v,w,perU,lab){
   let vals=v.map(Number);
   if(perU&&w>0){vals=vals.map(x=>x*100/w);return [n,...vals,lab,w]}
@@ -543,9 +699,11 @@ function build(n,v,w,perU,lab){
   if(w>0)return [n,...vals,lab,w];
   return [n,...vals];
 }
+
 $("#add").onclick=()=>{
   const n=$("#n").value.trim(),q=+$("#g").value;
   if(!n||!(q>0)){$("#n").focus();return}
+  const pm=needMeal("#pasto");if(!pm)return;
   const useU=$("#m").value==="u";
   let f=find(n);
   if(!f){
@@ -557,17 +715,19 @@ $("#add").onclick=()=>{
     S.u.push(f);foods();
     ["#ck","#cp","#cc","#cf","#cw","#cl"].forEach(s=>$(s).value="");$("#cm").value="g";$("#cu").style.display="none";
   }
-  push(mk(f,q,useU));
-  save();$("#n").value="";$("#g").value="";units();render();
+  push(mk(f,q,useU),pm);
+  save();$("#n").value="";$("#g").value="";autoQ=false;units();render();
 };
+
 $("#madd").onclick=()=>{
   const f=Math.max(0,+$("#mf").value||0),c=Math.max(0,+$("#mc").value||0),p=Math.max(0,+$("#mp").value||0),kv=$("#mk").value;
   if(!f&&!c&&!p&&kv===""){$("#mf").focus();return}
+  const pm=needMeal("#pasto2");if(!pm)return;
   const k=kv===""?f*9+c*4+p*4:Math.max(0,+kv||0);
-  push({n:$("#mn").value.trim()||"Macro inseriti a mano",k,p,c,f});
+  push({n:$("#mn").value.trim()||"Macro inseriti a mano",k,p,c,f},pm);
   save();["#mn","#mf","#mc","#mp","#mk"].forEach(s=>$(s).value="");render();
 };
-// modifica di una voce del diario
+
 function saveEdit(){
   const x=(S.l[iso(cur)]||[])[editIdx];
   if(!x){editIdx=null;render();return}
@@ -583,9 +743,11 @@ function saveEdit(){
     if(x.g!=null)x.g*=fc;
     if(x.q){x.qn=nq;x.q=`${r(nq)} × ${lab}`}
   }
+  const pv=$("#epa");if(pv&&ALLM.includes(pv.value))x.pasto=pv.value;
   editIdx=null;save();render();
 }
-$("#log").onclick=ev=>{
+
+$("#log-container").onclick=ev=>{
   const b=ev.target.closest("button");if(!b)return;
   const a=b.dataset.act,i=+b.dataset.i,key=iso(cur);
   if(a==="del"){S.l[key].splice(i,1);editIdx=null;save();render()}
@@ -593,23 +755,28 @@ $("#log").onclick=ev=>{
   else if(a==="cancel"){editIdx=null;render()}
   else if(a==="save")saveEdit();
 };
-// pasti salvati
+
 $("#sv").onclick=()=>{selMode=true;editIdx=null;render();$("#mnm").focus()};
 $("#mcn").onclick=()=>{selMode=false;$("#mnm").value="";render()};
 $("#msv").onclick=()=>{
   const e=S.l[iso(cur)]||[],name=$("#mnm").value.trim();
-  const items=[...document.querySelectorAll("#log .ck")].filter(b=>b.checked).map(b=>copy(e[+b.dataset.i]));
+  const items=[...document.querySelectorAll("#log-container .ck")].filter(b=>b.checked).map(b=>copy(e[+b.dataset.i]));
   if(!items.length)return;
   if(!name){$("#mnm").focus();return}
   S.m.push({name,items});selMode=false;$("#mnm").value="";save();render();
 };
+
 $("#meals").onclick=ev=>{
   const b=ev.target.closest("button");if(!b)return;
   const a=b.dataset.act,i=+b.dataset.i,m=S.m[i];if(!m)return;
-  if(a==="addmeal"){m.items.forEach(x=>push(copy(x)));save();render()}
+  if(a==="addmeal"){
+    const t=getTimeStr();
+    m.items.forEach(x=>{const item=copy(x);item.t=t;push(item,mealSel||(ALLM.includes(x.pasto)?x.pasto:null)||effMeal()||"Altro")});
+    save();render();
+  }
   else if(a==="delmeal"&&confirm(`Eliminare il pasto «${m.name}»?`)){S.m.splice(i,1);save();render()}
 };
-// alimenti personalizzati e modifiche alla lista base
+
 function saveFood(base){
   const err=$("#ferr"),bf=base&&P.find(p=>p[0].toLowerCase()===editB);
   const n=base?bf[0]:$("#fn").value.trim();
@@ -621,6 +788,7 @@ function saveFood(base){
   if(base){S.ov[editB]=nf;editB=null}else{S.u[editF]=nf;editF=null}
   save();foods();units();render();
 }
+
 $("#fpick").onclick=()=>{
   const n=$("#fsel").value.trim(),f=n&&find(n),msgEl=$("#fmsg");
   if(!f){msgEl.textContent=n?"Non trovo questo alimento: sceglilo dalla lista.":"Scrivi il nome di un alimento.";return}
@@ -629,6 +797,7 @@ $("#fpick").onclick=()=>{
   if(i>=0){editF=i;editB=null}else{editB=f[0].toLowerCase();editF=null}
   $("#fsel").value="";render();const q=$("#fk");if(q)q.focus();
 };
+
 $("#cust").onclick=ev=>{
   const b=ev.target.closest("button");if(!b)return;
   const a=b.dataset.act,i=b.dataset.i,foc=()=>{const q=$("#fk");if(q)q.focus()};
@@ -641,9 +810,10 @@ $("#cust").onclick=ev=>{
   else if(a==="bsave")saveFood(true);
   else if(a==="breset"){delete S.ov[i];if(editB===i)editB=null;save();foods();units();render()}
 };
-// backup
+
 const msg=t=>{$("#dmsg").textContent=t};
 const snapshot=()=>JSON.stringify({app:"macro",v:1,t:S.t,l:S.l,u:S.u,a:S.a,m:S.m,o:S.ov});
+
 $("#exp").onclick=async()=>{
   const txt=snapshot(),name=`macro-${iso(new Date())}.json`;
   try{
@@ -654,6 +824,7 @@ $("#exp").onclick=async()=>{
   a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();
   setTimeout(()=>URL.revokeObjectURL(url),2000);msg("Backup scaricato.");
 };
+
 $("#cpy").onclick=async()=>{
   const t=snapshot();
   try{await navigator.clipboard.writeText(t);msg("Dati copiati negli appunti.")}
@@ -663,27 +834,30 @@ $("#cpy").onclick=async()=>{
     catch(_){msg("Non sono riuscito a copiare: i dati sono nel campo qui sotto, selezionali e copiali a mano.")}
   }
 };
+
 function imp(txt){
   let d;try{d=JSON.parse(txt)}catch(e){msg("Il testo non è un backup valido.");return}
   if(!d||typeof d!=="object"||!d.l||typeof d.l!=="object"||!d.t||typeof d.t!=="object"){msg("Questo non sembra un backup di Macro.");return}
   const okE=x=>x&&typeof x.n==="string"&&[x.k,x.p,x.c,x.f].every(Number.isFinite);
   const okF=x=>Array.isArray(x)&&typeof x[0]==="string"&&x.slice(1,5).every(Number.isFinite);
+  const clean=x=>{if(!okT(x.t))delete x.t;if(!ALLM.includes(x.pasto))delete x.pasto;return x};
   if(!confirm("Importare i dati? Sostituiscono tutto quello che c'è ora su questo dispositivo."))return;
   const t={};["k","p","c","f"].forEach(k=>t[k]=+d.t[k]>0?+d.t[k]:S.t[k]);
-  const l={};Object.keys(d.l).forEach(k=>{if(/^\d{4}-\d{2}-\d{2}$/.test(k)&&Array.isArray(d.l[k]))l[k]=d.l[k].filter(okE)});
+  const l={};Object.keys(d.l).forEach(k=>{if(/^\d{4}-\d{2}-\d{2}$/.test(k)&&Array.isArray(d.l[k]))l[k]=d.l[k].filter(okE).map(clean)});
   const a={};if(d.a&&typeof d.a==="object")Object.keys(d.a).forEach(k=>{if(d.a[k]&&Number.isFinite(d.a[k].sh))a[k]={sh:d.a[k].sh}});
-  const m=Array.isArray(d.m)?d.m.filter(x=>x&&typeof x.name==="string"&&Array.isArray(x.items)).map(x=>({name:x.name,items:x.items.filter(okE)})):[];
+  const m=Array.isArray(d.m)?d.m.filter(x=>x&&typeof x.name==="string"&&Array.isArray(x.items)).map(x=>({name:x.name,items:x.items.filter(okE).map(clean)})):[];
   const o={};if(d.o&&typeof d.o==="object")Object.keys(d.o).forEach(k=>{if(okF(d.o[k]))o[k.toLowerCase()]=d.o[k]});
   S={t,l,u:Array.isArray(d.u)?d.u.filter(okF):[],a,m,ov:o};
   editIdx=null;editF=null;editB=null;selMode=false;
   save();foods();units();render();msg("Dati importati.");
 }
+
 $("#impb").onclick=()=>{const t=$("#impt").value.trim();if(!t){$("#impt").focus();return}imp(t);$("#impt").value=""};
 $("#impf").addEventListener("change",ev=>{
   const f=ev.target.files&&ev.target.files[0];if(!f)return;
   f.text().then(imp).catch(()=>msg("Non riesco a leggere il file."));ev.target.value="";
 });
-// conversione grassi / carboidrati
+
 $("#cd").addEventListener("change",cvPrev);
 $("#ca").addEventListener("input",cvPrev);
 $("#cok").onclick=()=>{
@@ -695,33 +869,42 @@ $("#cok").onclick=()=>{
   save();$("#ca").value="";render();
 };
 $("#crs").onclick=()=>{delete S.a[iso(cur)];save();render()};
-const go=n=>{cur.setDate(cur.getDate()+n);editIdx=null;selMode=false;$("#mnm").value="";render()};
+
+const go=n=>{cur.setDate(cur.getDate()+n);editIdx=null;selMode=false;mealSel=null;$("#mnm").value="";render()};
 $("#prev").onclick=()=>go(-1);
 $("#next").onclick=()=>go(1);
 $("#st").onclick=()=>{["k","p","c","f"].forEach(k=>{const v=+$("#t"+k).value;if(v>0)S.t[k]=v});save();render()};
-// scelta tra alimento e macro diretti
+
 function mode(m){
   const mm=m==="m";
   $("#fpan").hidden=mm;$("#mpan").hidden=!mm;
   $("#sa").setAttribute("aria-pressed",String(!mm));$("#sm").setAttribute("aria-pressed",String(mm));
+  updateLivePreview();
 }
 $("#sa").onclick=()=>mode("a");
 $("#sm").onclick=()=>mode("m");
-// se l'app resta aperta (o in background) oltre mezzanotte, "Oggi" passa al nuovo giorno
+
 let lastDay=iso(new Date());
 function checkDay(){
   const nd=iso(new Date());
   if(nd===lastDay)return;
+  mealSel=null;
   if(iso(cur)===lastDay){
-    if(editIdx!==null||selMode)return; // non interrompo una modifica in corso
+    if(editIdx!==null||selMode)return;
     cur=new Date();
   }
   lastDay=nd;render();
 }
-document.addEventListener("visibilitychange",()=>{if(!document.hidden)checkDay()});
+let hiddenAt=0;
+document.addEventListener("visibilitychange",()=>{
+  if(document.hidden){hiddenAt=Date.now();return}
+  if(hiddenAt&&Date.now()-hiddenAt>10*60*1000){mealSel=null;syncMeal()}
+  checkDay();
+});
 window.addEventListener("pageshow",checkDay);
 window.addEventListener("focus",checkDay);
 setInterval(checkDay,60000);
+
 foods();units();render();
 </script>
 </body>
